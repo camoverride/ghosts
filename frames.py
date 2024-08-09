@@ -43,6 +43,7 @@ def save_frames_from_video(camera_index=0, num_chunks=4, chunk_duration=5, outpu
         batch_frames = []
 
         for frame_num in range(chunk_frame_count):
+            print(frame_num)
             if get_user() == "pi":
                 frame = picam2.capture_array()
                 # Drop the alpha channel (if present) to match RGB format
