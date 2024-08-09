@@ -59,6 +59,9 @@ def save_frames_from_video(camera_index=0, num_chunks=4, chunk_duration=5, outpu
             mmapped_frames[frame_index] = frame
             frame_index += 1
 
+            # Add a small delay to reduce load
+            time.sleep(0.01)  # 10ms delay
+
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
