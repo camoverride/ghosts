@@ -19,48 +19,59 @@ if get_user() == "pi":
     from picamera2 import Picamera2
 
 
-def save_frames_from_video(camera_index=0, num_chunks=4, chunk_duration=5, output_file="frames.dat"):
+def save_frames_from_video(camera_index=0, num_chunks=4, chunk_duration=5, output_file="frames.dat", batch_size=10):
     if get_user() == "pi":
         picam2 = Picamera2()
-        picam2.configure(picam2.create_preview_configuration(main={"format": "BGR888", "size": (WIDTH, HEIGHT)}))
+        picam2.configure(picam2.create_preview_configuration(main={"format": "XRGB8888", "size": (WIDTH, HEIGHT)}))
         picam2.start()
         fps = 30
     else:
         cap = cv2.VideoCapture(0)
         fps = cap.get(cv2.CAP_PROP_FPS)
-    
+
     chunk_frame_count = int(chunk_duration * fps)
     total_frames = num_chunks * chunk_frame_count
-    frame_shape = (HEIGHT, WIDTH, 3)  # Fixed dimensions order
+    frame_shape = (HEIGHT, WIDTH, 3)
     dtype = np.uint8
 
+    # Memory-map the file for the entire sequence
     mmapped_frames = np.memmap(output_file, dtype=dtype, mode='w+', shape=(total_frames,) + frame_shape)
 
     frame_index = 0
 
-    for _ in range(num_chunks):
+    for chunk in range(num_chunks):
+        batch_frames = []
+
         for frame_num in range(chunk_frame_count):
             if get_user() == "pi":
                 frame = picam2.capture_array()
+                # Drop the alpha channel (if present) to match RGB format
+                if frame.shape[2] == 4:
+                    frame = frame[:, :, :3]
             else:
                 ret, frame = cap.read()
                 if not ret:
                     break
 
-            # Debugging: Print frame shape and type
-            print(f"Captured frame {frame_num} shape: {frame.shape}, dtype: {frame.dtype}")
+            # Store the frame in the batch
+            batch_frames.append(frame)
 
-            # Ensure consistent color order
-            if frame.shape[:2] != (HEIGHT, WIDTH):
-                print(f"Resizing frame from {frame.shape[:2]} to {(HEIGHT, WIDTH)}")
-                frame = cv2.resize(frame, (WIDTH, HEIGHT))
+            # Write and flush the batch to disk if the batch size is reached
+            if len(batch_frames) == batch_size:
+                for bf in batch_frames:
+                    mmapped_frames[frame_index] = bf
+                    frame_index += 1
+                mmapped_frames.flush()
+                batch_frames = []  # Reset the batch
 
-            # Store the frame in the memory-mapped array
-            mmapped_frames[frame_index] = frame
-            frame_index += 1
+            time.sleep(0.01)  # Small delay to reduce load
 
-            # Add a small delay to reduce load
-            time.sleep(0.01)  # 10ms delay
+        # Write and flush any remaining frames in the batch
+        if batch_frames:
+            for bf in batch_frames:
+                mmapped_frames[frame_index] = bf
+                frame_index += 1
+            mmapped_frames.flush()
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -70,8 +81,9 @@ def save_frames_from_video(camera_index=0, num_chunks=4, chunk_duration=5, outpu
         picam2.close()
     else:
         cap.release()
+        cv2.destroyAllWindows()
 
-    del mmapped_frames
+    del mmapped_frames  # Ensure the data is flushed to disk
 
 
 def alpha_blend_images(image1, image2, alpha=0.5):
