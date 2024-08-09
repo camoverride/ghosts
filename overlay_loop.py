@@ -11,7 +11,7 @@ def overlay_faces():
     if face_detected_mp():
         print("Face detected - saving frames from video")
         save_frames_from_video(camera_index=0,
-                            num_chunks=4,
+                            num_chunks=1,
                             chunk_duration=5,
                             output_file="frames.dat")
 
