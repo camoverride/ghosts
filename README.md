@@ -24,4 +24,5 @@ If there's an issue with jpeg:
 - `python overlay_loop.py`
 - `python stream_images_loop.py`
 
-currently SLOW - takes ~5 mins to save frames, 
+currently SLOW - takes ~5 mins to save frames, ~2 to overlay
+also: playback is too fast

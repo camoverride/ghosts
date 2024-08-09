@@ -1,7 +1,7 @@
 import time
 import os
 import shutil
-from frames import stream_images
+from frames import stream_images_from_memmap
 import cv2
 
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
             capture_datetime = current_capture_datetime
 
         # Stream images from ths folder!
-        stream_images(data_dir="play_dir")
+        stream_images_from_memmap(output_file="overlay.dat")
 
 
         # # If the data is unchanged, wait 1 second and check again.
