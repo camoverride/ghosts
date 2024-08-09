@@ -22,7 +22,7 @@ if get_user() == "pi":
 def save_frames_from_video(camera_index=0, num_chunks=4, chunk_duration=5, output_file="frames.dat"):
     if get_user() == "pi":
         picam2 = Picamera2()
-        picam2.configure(picam2.create_preview_configuration(main={"format": "XRGB8888", "size": (WIDTH, HEIGHT)}))
+        picam2.configure(picam2.create_preview_configuration(main={"format": "BGR888", "size": (WIDTH, HEIGHT)}))
         picam2.start()
         fps = 30
     else:
